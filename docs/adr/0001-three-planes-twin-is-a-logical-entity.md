@@ -1,0 +1,15 @@
+---
+status: accepted
+date: 2026-08-26
+source: AD-1, Architecture Spine (architecture-Dito-2026-08-25) — `_bmad-output/planning-artifacts/architecture/architecture-Dito-2026-08-25/ARCHITECTURE-SPINE.md`
+adopted-via: AD triage (Dito-Core/dito#2)
+amended: 2026-09-27 — the compute plane is a per-twin unit: a suspendable runtime with the twin's volume grafted on, behind the always-on connection plane; «never a dedicated process, container, or VM» is reversed for compute, with the reason on record (agent architecture, Dito-Core/dito#293; #286 narrows to the unit's mechanics)
+---
+
+# Three planes; a twin is a logical entity
+
+The system splits into three planes: a **connection plane** (always-on multiplexed WhatsApp sockets — never serverless), a **state plane** (per-twin encrypted state living on shared infrastructure), and a **compute plane** (event-driven workers). A twin is rows + a bundle + a lease — never a dedicated process, container, or VM.
+
+Chosen because box-per-twin economics don't survive scale, serverless can't hold a persistent WhatsApp socket, and per-twin processes must not become an accidental architecture.
+
+**Amendment 2026-09-27 (the per-twin unit).** The last sentence above — *a twin is rows + a bundle + a lease, never a dedicated process, container, or VM* — was written against box-per-twin economics and against per-twin processes arriving by accident. Both are answered differently now, and the sentence is reversed for the compute plane. **A twin's compute is a per-twin unit**: a runtime that boots identityless from the image, receives the twin's encrypted volume, asks KMS for that twin's key and only then is a twin; suspends by dropping the compute and keeping the volume; is reassigned by grafting the same volume onto another unit. Three reasons. The harness ([ADR-0014](0014-runtime-harness-tool-runner.md) as amended) spawns a process per session and holds a day's session open, so a per-twin process exists whether this ADR likes it or not, and a unit makes it a boundary instead of an accident. The privacy claim the product makes — Dito's operators cannot read a twin's memory — is made in every 2026 assistant that makes it (Muse's box per user, the sandboxes of Cowork and Quick) as a unit-and-key boundary, and a shared box holding many bundles cannot make it as plainly. And the economics that ruled it out were a box per twin, always on; a **suspendable** unit is paid for while awake, and a twin sleeps most of the day. The other two planes stand: the **connection plane** stays always-on and multiplexed, because a WhatsApp linked device cannot suspend, and it wakes the unit; the **state plane** keeps in Postgres only what is shared by construction — the Ledger behind the wall, the rows rep-web, notify and the plane read without a key, the wake rows a scheduler must see across twins. The twin is still a logical entity; the unit is where it runs. [#286](https://github.com/Dito-Core/dito/issues/286) narrows from *which compute unit* to the unit's mechanics: the runtime image, the graft, suspend and wake, the snapshot cadence.

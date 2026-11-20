@@ -1,0 +1,43 @@
+-- The reading's route loses its question; the count keeps its meaning
+-- (ticket #76, the interim half; FR-31; ADR-0003, ADR-0016, ADR-0037).
+--
+-- …100090 added this column when #66's fix half routed an
+-- `unresolved_reference` candidate to a QUESTION. The rig raised the first
+-- one on 2026-08-30 and the rep could not answer it: a «si» files «Te pidió
+-- lo mismo del pedido pasado», a sentence that is STILL unresolved, so the
+-- ask settled nothing and cost the rep work to fix the twin's own gap. Such
+-- a candidate is now DROPPED — no fact, no question, no disclosure line.
+--
+-- THE COLUMN IS NOT RENAMED, AND THE ARGUMENT IS THAT IT NEVER NAMED THE
+-- ROUTE. It names the READING — `unresolved_reference` is a member of
+-- `CANDIDATE_READINGS`, and that vocabulary is exactly what ticket #76
+-- keeps, because only the routing changed. "Candidates the model read as
+-- unresolved_reference" was a true sentence about this column on the day it
+-- was added and is a true sentence about it now. What was stale is one
+-- clause of its COMMENT — "the aperture turned into questions" — so that is
+-- what this migration corrects. A rename would cost a column rewrite, churn
+-- every reader of `unresolvedReference` in TypeScript, break anything
+-- reading the old name, and sever the join between the count and the
+-- classification it counts, all to say the same thing.
+--
+-- THE MEASUREMENT IS THE POINT, AND IT SURVIVES INTACT. #66 measured this
+-- route into existence, and a build that destroyed its own measurement
+-- while changing what the route DOES would be the defect this ticket must
+-- not introduce: the drop is invisible in every store — no fact, no
+-- question, nothing to count downstream — so this column is the ONLY place
+-- a reader can see how often it fires. A build where it fires constantly
+-- must stay visibly different from one where it never fires, both because
+-- the rate is the recall this ticket trades away, and because the eventual
+-- remedy (an extraction that RESOLVES the reference instead of dropping it,
+-- ADR-0037's execution shape) has to be measured against this number.
+--
+-- NOTHING ELSE MOVES. Both CHECK constraints …100090 wrote still hold
+-- exactly as written: every candidate still reaches exactly one of the four
+-- outcomes, so `filed + below_threshold + unresolved_reference + refused <=
+-- candidates` is unchanged, and a deferred run still files, asks and drops
+-- nothing. There is no value either constraint accepted before that it
+-- would refuse now, so neither is touched — this migration writes no data
+-- and alters no structure.
+
+COMMENT ON COLUMN extraction_runs.unresolved_reference IS
+    'Candidates the model read as naming something outside the day, which the aperture DROPPED — no fact, no question, no disclosure line (ticket #76; the reading is CANDIDATE_READINGS'' unresolved_reference). Counted because the drop is invisible everywhere else: this is the only place the rate can be read, and it is the baseline the eventual resolve-the-reference remedy is measured against. Counted apart from below_threshold, which stays exactly what its name says: the ones the CONFIDENCE gate turned into questions.';

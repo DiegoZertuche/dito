@@ -1,0 +1,37 @@
+{
+  "name": "@dito/seam",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./invitations": {
+      "types": "./dist/invitations.d.ts",
+      "default": "./dist/invitations.js"
+    },
+    "./references": {
+      "types": "./dist/references.d.ts",
+      "default": "./dist/references.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@dito/crypto": "workspace:*",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-kms": "^3.1118.0",
+    "@dito/bundle": "workspace:*",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
+    "typescript": "^5.7.3"
+  }
+}

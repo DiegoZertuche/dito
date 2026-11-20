@@ -1,0 +1,26 @@
+{
+  "name": "@dito/evals",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "eval:extraction": "pnpm -w build && node --experimental-strip-types scripts/extraction-precision.ts",
+    "eval:probe": "pnpm -w build && node --experimental-strip-types scripts/confidence-probe.ts",
+    "eval:probe-days": "pnpm -w build && node --experimental-strip-types scripts/probe-days.ts"
+  },
+  "dependencies": {
+    "@dito/aperture": "workspace:*",
+    "@dito/bundle": "workspace:*",
+    "@dito/crypto": "workspace:*",
+    "@dito/execution": "workspace:*",
+    "@dito/seam": "workspace:*",
+    "@dito/twin-runtime": "workspace:*",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
+    "typescript": "^5.8.0"
+  }
+}

@@ -1,0 +1,958 @@
+name: ci
+
+on:
+  # Manual only in this public snapshot: the lanes need AWS credentials
+  # (real KMS) that this repository does not carry.
+  workflow_dispatch:
+
+jobs:
+  unit:
+    name: unit (TS + Go)
+    runs-on: ubuntu-latest
+    # THE TEST DATABASE IS NAMED, NEVER DEFAULTED (ticket #305): every test
+    # helper refuses to run without it. No Postgres serves this job, so the
+    # plane's integration tests in `go test ./...` find it unreachable and
+    # skip loudly.
+    env:
+      DITO_TEST_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # THE ATLAS CACHE (ticket #88). `scripts/ensure-atlas.sh` downloads the
+      # pinned migration tool, and it runs inside a test's `beforeAll` by way
+      # of `migrate.sh`. Nothing cached `.tools`, so EVERY run fetched a
+      # binary from a third-party host before it could migrate — and when
+      # that host was unreachable (PR #87) the failure read as a test
+      # failure. Keyed on the pinned version, so a bump misses the cache and
+      # re-downloads; `restore-keys` is deliberately absent, since an older
+      # binary restored under a new key is exactly the wrong hit.
+      - name: Atlas version (cache key)
+        id: atlas
+        run: echo "version=$(scripts/ensure-atlas.sh --print-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the Atlas binary
+        uses: actions/cache@v4
+        with:
+          # THE BINARY, NOT THE DIRECTORY. `.tools` is also where the FR-73
+          # suite mints its corpus — a provisioned twin bundle and its
+          # manifest — and where the rig keeps `dito-plane`. Caching the
+          # directory would upload a twin bundle to the Actions cache and
+          # could restore a STALE corpus into a run whose FR-73 step then
+          # audits it. One file, deliberately.
+          path: .tools/atlas
+          key: atlas-${{ runner.os }}-${{ runner.arch }}-${{ steps.atlas.outputs.version }}
+
+      - name: Build
+        run: pnpm build
+
+      # NO MODEL CALL LEAVES THE BROWSER AND NO KEY RIDES IN ITS JAVASCRIPT
+      # (#263; spec #258 decision 5, the second of its two client
+      # invariants). Over rep-web's built
+      # `.next/static`, which is exactly what a browser is sent, so it runs
+      # after the build; `--require-bundle` refuses to pass over no bundle.
+      - name: Client bundle check (no model endpoint, no key in a browser bundle)
+        run: node scripts/client-bundle-check.mjs --require-bundle
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # AFTER Build, for the same reason Typecheck is (#79): the rig scripts
+      # in `packages/twin-runtime/scripts/` import `../dist/index.js`, so the
+      # type-aware rules — `no-floating-promises` and its two siblings —
+      # resolve those imports against the last build's `.d.ts`. Run over a
+      # missing `dist/`, every imported value is `any` and the rules quietly
+      # find nothing. `eslint.config.js` carries the ruleset and the argument
+      # for each rule.
+      - name: Lint (eslint)
+        run: pnpm lint
+
+      # THE COMMENT RULE (AGENTS.md, "Comments") has two mechanical halves.
+      # This one fails: two docblocks on one declaration is always a docblock
+      # that lost its declaration (#189 re-homed four).
+      - name: Docblock check
+        run: node scripts/docblock-check.mjs
+
+      # This one reports and never fails — some hits are legitimate pointers
+      # — so the PR body accounts for what it lists. On a pull request the
+      # checkout is the merge commit, so a diff against the base sha is
+      # exactly the branch's own comment lines; on a push it is the previous
+      # tip, and a first push has none. It runs even when the docblock check
+      # has failed, so a red PR still shows its report.
+      - name: Comment hygiene (report)
+        if: ${{ !cancelled() }}
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/comment-hygiene.mjs --base "$BASE" --issues
+
+      - name: Unit tests (vitest)
+        run: pnpm test
+
+      # EVERY REP-FACING STRING OF THE DASHBOARD IS A KEY INTO @dito/copy
+      # (#219; spec #214 decision 13 and user story 47). A sweep over
+      # rep-web in the composed-language sweep's shape; it carries no
+      # dependency, so it needs no build. `--require-app` is what makes the
+      # green mean something (#221): without it a rep-web that failed to check
+      # out sweeps nothing and reports a pass nobody can interpret, which is
+      # the run-versus-cover defect this repo's invariants exist to refuse.
+      - name: Copy check (no rep-facing literal outside @dito/copy)
+        run: node scripts/copy-check.mjs --require-app
+
+      # A PUBLISHED DOCUMENT VERSION NEVER CHANGES (#219; spec #214 decision
+      # 6 and user story 12). An acknowledgment row names a key and a
+      # number, so those two must name the same words for ever — and no
+      # check that reads only the working tree can tell a re-published text
+      # from one written correctly the first time. This one compares the
+      # published (document, version, digest) triples against the branch's
+      # BASE, which is why it takes the same sha the comment-hygiene step
+      # does; on a first push there is none and it says so.
+      - name: Copy versions (a published document version is immutable)
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/copy-versions-check.mjs --base "$BASE"
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: false
+
+      - name: Plane tests (go vet + go test)
+        working-directory: plane
+        run: |
+          go vet ./...
+          go test ./...
+
+  integration:
+    name: integration ${{ matrix.shard }}/3 (real Postgres, real KMS)
+    runs-on: ubuntu-latest
+    # THREE RUNNERS, ONE THIRD OF THE FILES EACH (ticket #390). Once files run
+    # in parallel the lane is CPU-bound: a runner has two cores and every
+    # execution spawns an SDK child, so more workers on one runner only made
+    # every file slower (measured on CI: 4 workers 630–1055 s, 6 workers
+    # 1218 s, 8 workers timing out). Vitest splits the files by path
+    # (`--shard`), each runner has its own Postgres, and a check runs on the
+    # runner whose run kept its suite's database. `integration-checks` below
+    # is what proves every checked suite was kept by exactly one runner.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    # The run's base, named for both suites (ticket #305): every database the
+    # vitest lane and the plane's tests create is derived from its name
+    # (ticket #390), and the check steps name the kept ones they read.
+    env:
+      DITO_TEST_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+
+      # POSTGRES FROM A STEP, PULLED SIGNED IN (2026-10-12): the public
+      # registry caps anonymous pulls by data and the lane's five jobs per run
+      # tipped it over on `main`. A service container cannot sign in first;
+      # `scripts/ci-postgres.sh` loads the job's cached image, or pulls it
+      # signed in with the AWS keys where present, then waits for health as
+      # the service did.
+      - name: Cache the Postgres image
+        uses: actions/cache@v4
+        with:
+          path: /tmp/ci-postgres-image.tar
+          key: ci-postgres-image-${{ runner.os }}-postgres16-v1
+
+      - name: Start Postgres
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: scripts/ci-postgres.sh
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # THE ATLAS CACHE (ticket #88). `scripts/ensure-atlas.sh` downloads the
+      # pinned migration tool, and it runs inside a test's `beforeAll` by way
+      # of `migrate.sh`. Nothing cached `.tools`, so EVERY run fetched a
+      # binary from a third-party host before it could migrate — and when
+      # that host was unreachable (PR #87) the failure read as a test
+      # failure. Keyed on the pinned version, so a bump misses the cache and
+      # re-downloads; `restore-keys` is deliberately absent, since an older
+      # binary restored under a new key is exactly the wrong hit.
+      - name: Atlas version (cache key)
+        id: atlas
+        run: echo "version=$(scripts/ensure-atlas.sh --print-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the Atlas binary
+        uses: actions/cache@v4
+        with:
+          # THE BINARY, NOT THE DIRECTORY. `.tools` is also where the FR-73
+          # suite mints its corpus — a provisioned twin bundle and its
+          # manifest — and where the rig keeps `dito-plane`. Caching the
+          # directory would upload a twin bundle to the Actions cache and
+          # could restore a STALE corpus into a run whose FR-73 step then
+          # audits it. One file, deliberately.
+          path: .tools/atlas
+          key: atlas-${{ runner.os }}-${{ runner.arch }}-${{ steps.atlas.outputs.version }}
+
+      # The seam tests import @dito/crypto through its built entry point, so
+      # the integration runner builds too — it shares no filesystem with the
+      # unit job.
+      - name: Build
+        run: pnpm build
+
+      # ADR-0028: the crypto path is never mocked. When the AWS secrets are
+      # absent the KMS tests are SKIPPED — loudly, as a workflow warning and
+      # in the job summary — never emulated, never silently green.
+      - name: Check AWS secrets
+        id: aws
+        env:
+          KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          missing=""
+          [ -z "$KEY_ID" ] && missing="AWS_ACCESS_KEY_ID"
+          [ -z "$SECRET" ] && missing="${missing:+$missing, }AWS_SECRET_ACCESS_KEY"
+          if [ -n "$missing" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=KMS integration tests SKIPPED::Repo secret(s) $missing not configured. The real-KMS crypto tests AND the FR-73 store-enumeration invariant were SKIPPED, not passed (ADR-0028: never mocked). Add the secrets to run them."
+            {
+              echo "## :warning: KMS integration tests SKIPPED"
+              echo ""
+              echo "Missing repo secret(s): \`$missing\` (optionally \`AWS_REGION\`)."
+              echo "The real-KMS crypto tests were **skipped, not passed** — the crypto path is never mocked (ADR-0028)."
+              echo "The **FR-73 store-enumeration invariant did not run** either (its corpus is a real KMS-provisioned twin) — this run proves nothing about bundle residency."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # THE EMAIL RAIL, ON THE SAME TERMS AS KMS (#219; ADR-0022, ADR-0028's
+      # no-emulation rule). Notify's SES lane sends the invitation and the
+      # login code to a dev mailbox when its two addresses are configured —
+      # and when they are not, the lane is SKIPPED loudly, never faked. The
+      # AWS credentials are the same secrets the KMS steps use; these two
+      # repository variables name the verified sender and the operator's own
+      # inbox, and neither exists today, so this step is expected to warn.
+      - name: Check SES configuration
+        id: ses
+        env:
+          SES_FROM: ${{ vars.DITO_SES_FROM }}
+          SES_MAILBOX: ${{ vars.DITO_SES_DEV_MAILBOX }}
+          AWS_PRESENT: ${{ steps.aws.outputs.present }}
+        run: |
+          missing=""
+          [ -z "$SES_FROM" ] && missing="DITO_SES_FROM"
+          [ -z "$SES_MAILBOX" ] && missing="${missing:+$missing, }DITO_SES_DEV_MAILBOX"
+          [ "$AWS_PRESENT" != "true" ] && missing="${missing:+$missing, }AWS credentials"
+          if [ -n "$missing" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=SES integration lane SKIPPED::$missing not configured. The real-SES send of the invitation and the login code was SKIPPED, not passed (ADR-0028: never mocked). The catalog, the templates and the send record were still proven against a recording transport."
+            {
+              echo "## :warning: SES integration lane SKIPPED"
+              echo ""
+              echo "Missing: \`$missing\`."
+              echo "The invitation and the login code were **not sent to any mailbox** — the email rail is skipped, not mocked (ADR-0028)."
+              echo "Everything else about notify — the closed catalog, the typed slots, recipients from seat state, the content-free record — ran."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # One audit HMAC key per run PER SIDE (ADR-0020 as amended; the custody
+      # decision on #24 and #157 decision 3): the integration suite chains rep
+      # refusals under the first and the owner twin's executions under the
+      # second, and the invariant steps below verify that same corpus with
+      # both. INDEPENDENTLY MINTED, because deriving one from the other would
+      # make a key that can verify a rep-side store reachable from the owner
+      # side's — which is exactly what the split exists to prevent. Both go
+      # into `GITHUB_ENV`, so every step below carries them.
+      - name: Mint the run's audit HMAC keys (rep and owner)
+        run: |
+          echo "DITO_AUDIT_HMAC_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "DITO_OWNER_AUDIT_HMAC_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+
+      # THE LONGEST FILES START FIRST (ticket #390). Vitest orders a run by
+      # the durations it recorded last time, longest first, and with no record
+      # it falls back to file size — which starts the eval harness, the
+      # lane's longest file, minutes late, behind four larger but shorter
+      # files. The record is vitest's own results file, carried from run to
+      # run; it holds file names and durations and nothing else.
+      - name: Cache vitest's recorded durations
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.vite/vitest
+          key: vitest-durations-${{ runner.os }}-${{ matrix.shard }}-${{ github.run_id }}
+          restore-keys: vitest-durations-${{ runner.os }}-${{ matrix.shard }}-
+
+      # ONE RUN OF EVERY SUITE, FILES IN PARALLEL, EACH ON ITS OWN DATABASE
+      # (ticket #390). The lane's global setup migrates one template from
+      # `DITO_TEST_DATABASE_URL`'s name with the pinned Atlas; every file runs
+      # on a clone of it named for the file
+      # (`packages/seam/src/testing/database-url.ts`). When the run ends,
+      # the databases of the suites in `KEPT_FOR_CHECKS` stay behind, and
+      # every check below reads its suite's own database — the corpus that
+      # suite left, which no other file can have touched. That is why no
+      # suite runs a second time here and why the checks' order is free.
+      - name: Integration tests (vitest, real Postgres + real KMS)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          DITO_SKIP_KMS_TESTS: ${{ steps.aws.outputs.present == 'true' && '0' || '1' }}
+          DITO_REQUIRE_SES: ${{ steps.ses.outputs.present == 'true' && '1' || '0' }}
+          DITO_SES_FROM: ${{ vars.DITO_SES_FROM }}
+          DITO_SES_DEV_MAILBOX: ${{ vars.DITO_SES_DEV_MAILBOX }}
+        run: pnpm test:integration --shard=${{ matrix.shard }}/3
+
+      # The kept databases this runner's share of the files left behind,
+      # space-delimited so a step can ask for one name exactly; and the same
+      # list for `integration-checks` to add up across the three runners.
+      - name: The kept databases this runner holds
+        id: kept
+        run: |
+          held=$(psql "$DITO_TEST_DATABASE_URL" -Atc "SELECT string_agg(datname, ' ' ORDER BY datname) FROM pg_database WHERE datname LIKE 'dito\_test\_%' AND datname <> 'dito_test_template'")
+          echo "held= ${held} " >> "$GITHUB_OUTPUT"
+          mkdir -p .kept && printf '%s\n' ${held} > ".kept/shard-${{ matrix.shard }}.txt"
+          echo "kept here: ${held:-none}"
+
+      - name: Record the kept databases for integration-checks
+        uses: actions/upload-artifact@v4
+        with:
+          name: kept-databases-${{ matrix.shard }}
+          path: .kept/
+          include-hidden-files: true
+
+      # THE SLICE-1 CI INVARIANTS (ticket #24), over the send-lock writer
+      # suite's database: its sends, refusals and races under this run's
+      # HMAC key. --require-corpus/--require-entries: an empty corpus fails
+      # loudly — never a silent green (ADR-0028).
+      - name: FR-70 send-tap reconciliation over the send-lock writer (slice AC 9)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_send_lock_writer ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_send_lock_writer?sslmode=disable
+        run: node scripts/fr70-check.mjs --require-corpus
+
+      - name: Audit chain integrity over the send-lock writer (ADR-0020)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_send_lock_writer ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_send_lock_writer?sslmode=disable
+        run: node scripts/audit-verify.mjs --require-entries
+
+      # NO COVERAGE CHECK OVER THE SEND-LOCK WRITER, and the reason is worth
+      # writing down (ticket #78, Codex r2). This is the only corpus dedicated
+      # to the `customer_send` surface — but a send refusal rolls back to its
+      # savepoint before appending, so it persists nothing to join its entry
+      # against, and a coverage step here would examine zero acts. A gate that
+      # cannot fail is the silent green `--require-acts` exists to refuse. IF
+      # customer-send acts are ever made independently joinable (the
+      # remainder on #78: an immutable attempt marker), the gate belongs
+      # beside the two steps above, over the same database, with the class
+      # named explicitly.
+      #
+      # #224 WROTE HALF OF THAT MARKER AND THE GATE STILL DOES NOT BELONG
+      # HERE. rep-web holds no chain key, so its refusals persist as
+      # `send_refusals` rows and the lease holder chains them at its next
+      # pass — a real, immutable, joinable marker, but for ONE of the two
+      # minters. The matcher's refusals still roll back, so an enumeration
+      # over that table would demand entries for half the class's acts and
+      # count none of the other half: worse than unjoinable, because it
+      # would look quantitative. The class stays unjoinable and says why
+      # (`customer_send_refused` in `audit-coverage.ts`), which also records
+      # the new gap it cannot see — an entry OWED between two poll passes.
+
+      # The crossing's invariants (ticket #50), over the crossing suite's
+      # database: real rep-confirmed bindings driven through the aperture.
+      # --require-corpus: nothing crossed is not a pass.
+      - name: FR-72 disclosure reconciliation over the crossing (spec #48)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_crossing ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_crossing?sslmode=disable
+        run: node scripts/fr72-check.mjs --require-corpus
+
+      # AUDIT COVERAGE (ticket #78, ADR-0020, spec #48 decision 18). The
+      # integrity steps verify the chain's INTEGRITY; this one verifies its
+      # COVERAGE — that everything which should have been chained was. They
+      # are two claims: an act that never calls `appendAuditEntry` leaves no
+      # gap to detect, because a chain missing a link it was never asked to
+      # write is identical to a complete one. `--require-entries` on
+      # `audit-verify` asserts `count > 0`; this asserts `count == the acts
+      # that owed one`.
+      #
+      # OVER THE CROSSING because it is the corpus where the claim is about
+      # acts that exist: the crossing suite drives real rep-confirmed
+      # bindings through the consumer, so every `binding_confirmed` marker
+      # it leaves must have an `entity_create` entry naming its event.
+      # --require-acts NAMES ITS CLASS. The bare flag is a floor over the
+      # whole database, so a step whose suite stopped producing the acts it
+      # exists to check could still clear it on other acts. Naming the class
+      # is what makes this step's claim its own.
+      #
+      # `entity_kind` IS NAMED HERE TOO (ticket #60). Every entity the
+      # crossing files carries a model determination of what kind of
+      # customer it is, chained under its own word — so this is where that
+      # class is non-vacuous, and it is the only corpus that files entities
+      # through the crossing at all. Unnamed, it would ride along on
+      # `entity_create`'s floor and prove nothing about itself.
+      #
+      # ...AND `rep_execution` (ticket #176). The determination is an
+      # EXECUTION, so this corpus holds rep-side execution records and their
+      # chain entries — and the class that covers them is stated as the
+      # complement of the owner's, so it would go on passing here unnamed and
+      # vacuous. A class is ADDED to a check and never removed, and this one
+      # is what makes "every classification leaves an execution row and a
+      # chain entry" a claim CI makes rather than one a suite makes.
+      - name: Audit coverage over the crossing (tickets #78, #60, #176)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_crossing ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_crossing?sslmode=disable
+        run: node scripts/audit-coverage-check.mjs --require-acts=entity_create,entity_kind,rep_execution
+
+      # The extraction corpus (ticket #52): the daily per-chat pass over real
+      # seam traffic, so FR-72 and ADR-0033 have extraction runs and
+      # extracted facts to examine. FR-72 over FACTS: "every fact has
+      # exactly one disclosure line" as a claim about facts, where the
+      # crossing's is about entity creates.
+      - name: FR-72 disclosure reconciliation over extracted facts (ticket #52)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_extraction ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_extraction?sslmode=disable
+        run: node scripts/fr72-check.mjs --require-corpus
+
+      # ADR-0033, mechanized (spec #48 grilling decision 4): no extraction
+      # run or fact row ever carries the twin thread as its source. The rule
+      # that stops the rep's own notes to their twin being disclosed to their
+      # employer — and exactly the kind that rots silently, so it is checked
+      # over real rows on every run. The planted violation lives in the
+      # invariants suite.
+      - name: ADR-0033 exclusion (spec #48 grilling decision 4)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_extraction ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_extraction?sslmode=disable
+        run: node scripts/adr0033-check.mjs --require-corpus
+
+      # COVERAGE OVER THE EXTRACTION EXECUTIONS (ticket #194; spec #193
+      # decision 28; ADR-0020). Extraction is an execution, so the
+      # extraction suite is a mint for the rep side's `rep_execution` class —
+      # one content-free entry per record, `filed`, `nothing-to-file` and
+      # `failed` alike. A corpus is checked where it is minted: a hole in
+      # these rows would otherwise only be found by a class counting a
+      # different suite's work.
+      - name: Audit coverage over the extraction executions (ticket #194)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_extraction ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_extraction?sslmode=disable
+        run: node scripts/audit-coverage-check.mjs --require-acts=rep_execution
+
+      # ...and the integrity of the links it wrote, under this run's REP key.
+      # An extraction's entry is appended inside the same transaction as its
+      # record, its filed facts and its run row's settle, so this is where
+      # "the entry and the record commit together" is checked over rows the
+      # daily pass actually wrote.
+      - name: Audit chain integrity over the extraction executions (ticket #194)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_extraction ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_extraction?sslmode=disable
+        run: node scripts/audit-verify.mjs --require-entries
+
+      # NO QUESTIONS CORPUS (ticket #218; spec #214 decision 3): the
+      # candidate-question route is retired, so there is no store for FR-72,
+      # ADR-0033, audit integrity or audit coverage to read a second time.
+      # Each of those four is checked over the extraction corpus above,
+      # which is where facts cross.
+
+      # The corrections corpus (ticket #54): a day's facts filed, disclosed,
+      # posted by the executor, corrected from the thread with «N no», and
+      # the correction window closing 24h after rep-reachability. FR-72 over
+      # a corpus that has been CORRECTED: a retraction annotates and never
+      # erases, so the fact↔line 1:1 must survive it — a correction that
+      # removed a row would leave the invariant red, and this is the run
+      # that would say so.
+      - name: FR-72 disclosure reconciliation over corrected facts (ticket #54)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_corrections ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_corrections?sslmode=disable
+        run: node scripts/fr72-check.mjs --require-corpus
+
+      # The audit chain over REP ACTS (ADR-0020, spec #48 decision 18):
+      # entity creates, retractions and refused corrections. Same run, same
+      # key.
+      - name: Audit chain over the corrections (ticket #54)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_corrections ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_corrections?sslmode=disable
+        run: node scripts/audit-verify.mjs --require-entries
+
+      # THE RUN THAT MATTERS MOST FOR COVERAGE (ticket #78). This is the
+      # only corpus holding a REFUSED correction, and a refusal is the act
+      # a future writer is most likely to forget — because it is the one
+      # that persists nothing else. A successful entity create leaves an
+      # entity and a retraction leaves a retraction; `correction_refused`
+      # leaves only a `wa_event_processing` disposition and a notice, so
+      # that disposition is the join, and this step is where it is exercised
+      # over real rows. It also counts the exclusions: the candidate facts
+      # and finalizations this corpus holds are reported as deliberately
+      # unchained, so the green is readable rather than absolute.
+      - name: Audit coverage over the corrections (ticket #78)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_corrections ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_corrections?sslmode=disable
+        run: >-
+          node scripts/audit-coverage-check.mjs
+          --require-acts=fact_retraction_performed,fact_retraction_refused
+
+      # THE REP SIDE'S EXECUTION CORPUS (ticket #172; spec #171 decision
+      # 12), over the drafting suite's database. Drafting is an automation
+      # on the runtime, so a settled customer turn leaves a content-free row
+      # on `public.executions` and one `execution` entry on the rep chain —
+      # and audit coverage's `rep_execution` class is what makes that an
+      # obligation rather than a habit. The suite drives four dispositions
+      # through the consumer over the scripted wire (`drafted`, `no-action`,
+      # `failed`, and a refusal corrected inside one execution).
+      #
+      # `--require-acts=rep_execution` NAMES ITS OWN CLASS, and it has to be
+      # its own: the owner side's `execution` class joins `owner.executions`
+      # behind row-level security and cannot see these rows, and the flag
+      # takes a class id. The two classes partition the action word by the
+      # occasion in the reference, so each one's numbers are about its own
+      # side of the wall (ADR-0020; ADR-0014 as amended).
+      #
+      # THE JOIN IS ARITHMETIC, and the reason is in the class: one trigger can
+      # run twice, so two records can share one reference and no per-act token
+      # could tell them apart. A failed realtime execution consumes its
+      # trigger (#240), but the shape survives it, because a kind
+      # classification the model refuses is asked again from the uncrossed
+      # binding at the next start under an identical reference. What this
+      # step catches is a record written without its entry, and it catches
+      # it in the repeat case too.
+      - name: Audit coverage over the rep side's executions (ticket #172)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_drafting ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_drafting?sslmode=disable
+        run: node scripts/audit-coverage-check.mjs --require-acts=rep_execution
+
+      # ...and the integrity of the links it wrote, under this run's REP key.
+      # A drafting execution's entry is appended inside the same transaction
+      # as its record, the draft, the timing and the turn's markers, so this
+      # is where "the entry and the record commit together" is checked over
+      # rows a consumer actually wrote.
+      - name: Audit chain integrity over the rep side's executions (ticket #172)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_drafting ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_drafting?sslmode=disable
+        run: node scripts/audit-verify.mjs --require-entries
+
+      # THE THREAD'S OWN EXECUTION CORPUS (ticket #173; spec #171 decisions
+      # 12 and 19), over the thread suite's database. Every rep message the
+      # keyword matcher does not consume is a twin-thread execution, so this
+      # suite drives the thread's dispositions through the consumer over the
+      # scripted wire (`answered`, `no-action`, `failed`, a guard refusal
+      # corrected inside one execution) and TWO executions interleaving on
+      # the realtime lane. The SAME class as the drafting pair's:
+      # `rep_execution` is stated as the complement of the owner's — every
+      # `execution` entry whose ref does not name an owner question — so a
+      # new rep-side occasion is covered by construction rather than by a
+      # list somebody has to remember to edit.
+      - name: Audit coverage over the twin thread's executions (ticket #173)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_thread ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_thread?sslmode=disable
+        run: node scripts/audit-coverage-check.mjs --require-acts=rep_execution
+
+      # ...and the integrity of the links it wrote, under this run's REP key.
+      # A thread execution's entry is appended inside the same transaction
+      # as its record, the answer notice and the event's marker — on a
+      # connection the execution borrowed for exactly that long — so this is
+      # where "the entry and the record commit together" is checked over
+      # rows two CONCURRENT executions wrote.
+      - name: Audit chain integrity over the twin thread's executions (ticket #173)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_thread ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_thread?sslmode=disable
+        run: node scripts/audit-verify.mjs --require-entries
+
+      # THE DASHBOARD'S OWN ACT CORPUS (ticket #224; spec #214 decision 2).
+      # The acts above were pressed in the twin thread, by a rep quoting a
+      # message. These are the same acts pressed on Inicio — one
+      # `dashboard_acts` row apiece instead of a `wa_events` id, and the SAME
+      # act functions underneath — so these two checks say the surface is
+      # chained rather than merely wired: a retraction that performed, two
+      # that refused before the aperture ever saw them, and one
+      # deterministic execution per press.
+      #
+      # `fact_retraction_performed` and `fact_retraction_refused` are named
+      # because this is the corpus in which either is reached through a
+      # `dashboard_acts` row — the classes have an arm (#224) that
+      # enumerates acts whose evidence is a press rather than a message, and
+      # an arm that enumerates nothing is the silent green `--require-acts`
+      # exists to refuse. `rep_execution` is the same complement class the
+      # thread and drafting checks use: a dashboard act IS an execution
+      # (ADR-0014 as amended), and this asserts it left one. `scope_change`
+      # is required here and nowhere else: the scope switch is a dashboard
+      # act (#223), so this is the one corpus where «every scope act carries
+      # its entry» is a claim CI makes.
+      - name: Audit coverage over the dashboard's acts (tickets #224, #223)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_dashboard_acts ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_dashboard_acts?sslmode=disable
+        run: >-
+          node scripts/audit-coverage-check.mjs
+          --require-acts=fact_retraction_performed,fact_retraction_refused,rep_execution,scope_change
+
+      # ...and the integrity of the links it wrote, under this run's REP key.
+      # A dashboard act appends inside the same transaction as the act row,
+      # the aperture's own write, the execution record and the receipt post,
+      # so this is where "the entry and the record commit together" is
+      # checked over rows no message ever caused.
+      - name: Audit chain integrity over the dashboard's acts (ticket #224)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_dashboard_acts ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_dashboard_acts?sslmode=disable
+        run: node scripts/audit-verify.mjs --require-entries
+
+      # THE OWNER TWIN'S CORPUS (ticket #130): the far side of the wall, its
+      # own schema, its own chain, its own key. The owner twin's turn suite
+      # seeds two companies through the Postgres seam, runs the owner twin
+      # over the scripted wire as `dito_owner`, and leaves one
+      # `owner.executions` row and one `execution` chain entry per turn —
+      # answered, refused, asked, missed and, four times over, refused by the
+      # structural guard.
+      #
+      # COVERAGE OVER EXECUTIONS (ADR-0020 as amended, ADR-0014 as amended,
+      # spec #126 decision 5(f)). It joins `owner.executions` — a row written
+      # by a different statement than the append, inside the same transaction
+      # — against the chain entries whose `ref` names the question, on EITHER
+      # chain (#165): the rig's pre-cutover entries are on the shared chain
+      # and every new one is on `owner.audit_chain`. `--require-acts=execution`
+      # NAMES THE CLASS, which is also what makes "the owner chain is not
+      # empty" a checked claim, and why `audit-verify --require-entries`
+      # below deliberately does not repeat it (see that script's header).
+      - name: Audit coverage over the owner twin's executions (tickets #130, #165)
+        if: contains(steps.kept.outputs.held, ' dito_test_owner_twin_turn ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_owner_twin_turn?sslmode=disable
+        run: node scripts/audit-coverage-check.mjs --require-acts=execution
+
+      # ...and the integrity of the links it wrote, under this run's OWNER
+      # key. The owner app is the only writer of `owner.audit_chain` (#157),
+      # so this is where "the owner side can extend its own chain, cannot
+      # fork it, and cannot touch the rep side's" is checked over rows an
+      # owner connection actually wrote. One invocation, both chains, one
+      # exit code.
+      - name: Audit chain integrity over the owner twin's executions (tickets #130, #165)
+        if: contains(steps.kept.outputs.held, ' dito_test_owner_twin_turn ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_owner_twin_turn?sslmode=disable
+        run: node scripts/audit-verify.mjs --require-entries
+
+      # Grants, not convention (ADR-0003/0016), FR-71a's own grant diff
+      # (ticket #127, spec #126 decision 20) and the rep-web clause (#221):
+      # catalog-only, so it needs no corpus — but it must run against the
+      # migrated schema, and the roles it is about have to be there. It
+      # reads the owner twin's database, a migrated one this run kept.
+      # `--require-roles` is this check's `--require-corpus`: a database
+      # where `dito_rep_web` was never created has no grants to diff and
+      # would otherwise pass on nothing.
+      - name: Ledger grant audit + FR-71a (spec #48 decision 2, spec #126 decision 20)
+        if: contains(steps.kept.outputs.held, ' dito_test_owner_twin_turn ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_owner_twin_turn?sslmode=disable
+        run: >-
+          node scripts/ledger-grants-check.mjs
+          --require-roles=dito_aperture,dito_twin_runtime,dito_owner,dito_ledger_views,dito_owner_state,dito_rep_web
+
+      # REP-WEB HOLDS NO KEY AND REACHES NOTHING TWIN-SIDE (#263; spec #258
+      # decision 5, the first of its two client invariants): claim 10 of the
+      # audit above, run as a check of its own over the same migrated
+      # schema, failing on a missing role.
+      - name: Rep-web grants check (the dashboard reaches nothing twin-side)
+        if: contains(steps.kept.outputs.held, ' dito_test_owner_twin_turn ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_owner_twin_turn?sslmode=disable
+        run: node scripts/rep-web-grants-check.mjs
+
+      # The wall, on the Ledger's own content (ADR-0004): no chat identity
+      # crossed. Reads counts, never values — over the owner twin's corpus,
+      # the two-company Ledger the owner side reads.
+      - name: Ledger wall sweep (ADR-0004)
+        if: contains(steps.kept.outputs.held, ' dito_test_owner_twin_turn ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_owner_twin_turn?sslmode=disable
+        run: node scripts/ledger-wall-check.mjs --require-corpus
+
+      # FR-73 store-enumeration invariant (ticket #31, spec #29 decision
+      # 13): the fr73 suite mints a real provisioned twin as the corpus
+      # (fixture KMS key — which is why this step needs the AWS secrets and
+      # is skipped, loudly via the summary above, without them) and leaves
+      # its manifest at `.tools/fr73-corpus.json`; the script audits it:
+      # every rep-side store bundle-resident under exactly one KMS key per
+      # twin, and a planted out-of-bundle store proven to fail inside the
+      # suite.
+      - name: FR-73 store enumeration (slice-2 skeleton)
+        if: steps.aws.outputs.present == 'true' && contains(steps.kept.outputs.held, ' dito_test_twin_runtime_fr73 ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_fr73?sslmode=disable
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+        run: node scripts/fr73-check.mjs
+
+      # THE MERGE CORPUS, and it exists because no other corpus holds a
+      # merge: the audit-coverage suite's database. Without it
+      # `entity_merge_performed` would be green in CI over ZERO acts on every
+      # run — a class that is checked in name and vacuous in fact, which is
+      # the silent green ticket #78 exists to refuse. The merge is the one
+      # act performed with no user in the loop, so a gate that cannot fail
+      # is the worst place to leave it.
+      - name: Audit coverage over a machine merge (ADR-0035)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_audit_coverage ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_audit_coverage?sslmode=disable
+        run: node scripts/audit-coverage-check.mjs --require-acts=entity_merge_performed
+
+      - name: Audit chain integrity over the merge corpus (ADR-0020)
+        if: contains(steps.kept.outputs.held, ' dito_test_twin_runtime_audit_coverage ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_twin_runtime_audit_coverage?sslmode=disable
+        run: node scripts/audit-verify.mjs --require-entries
+
+      # THE LAUNCH-GATE CORPUS (ticket #132; ADR-0016 as amended): the
+      # shadow-lift suite's database. No other corpus holds a lift:
+      # `shadow_lifted_at` is set by exactly one writer and nothing else in
+      # CI runs it, so without it the `shadow_lift` class would be green
+      # over ZERO acts on every run. It is also the act with the shortest
+      # list of actors in the whole system (one operator, once per company,
+      # no rep and no model), which is exactly the kind ADR-0020 wants a
+      # reader to be able to find.
+      - name: Audit coverage over a shadow lift (ADR-0016 as amended)
+        if: contains(steps.kept.outputs.held, ' dito_test_aperture_shadow_lift ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_aperture_shadow_lift?sslmode=disable
+        run: node scripts/audit-coverage-check.mjs --require-acts=shadow_lift
+
+      # FR-72 over a corpus that has been LIFTED. The act flips `shadow` on
+      # rows that already have their disclosure lines, so the fact↔line 1:1
+      # has to survive it — an act that touched anything else about a fact
+      # would leave the invariant red, and this is the run that would say so.
+      - name: FR-72 disclosure reconciliation across the lift (ticket #132)
+        if: contains(steps.kept.outputs.held, ' dito_test_aperture_shadow_lift ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_aperture_shadow_lift?sslmode=disable
+        run: node scripts/fr72-check.mjs --require-corpus
+
+      - name: Audit chain integrity over the launch-gate corpus (ADR-0020)
+        if: contains(steps.kept.outputs.held, ' dito_test_aperture_shadow_lift ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_aperture_shadow_lift?sslmode=disable
+        run: node scripts/audit-verify.mjs --require-entries
+
+      # THE EVAL STAGE (ticket #56; ADR-0028 as amended 2026-09-02): CI
+      # NEVER MAKES A REAL MODEL CALL. The wire is scripted; the real SDK
+      # and Tool Runner run in-process. The harness is what stops the eval
+      # lane rotting: the corpus goes in as `wa_events`, `runDailyExtraction`
+      # reads it, the aperture's gate decides fact-or-drop, and the scorer
+      # reads the number back out of the Ledger — everything except the
+      # model is the live run, so a change to `readFiledFacts` breaks it in
+      # the run above rather than at the next steering session.
+      #
+      # A NAMED STEP OVER THE HARNESS'S OWN DATABASE, because a step with a
+      # name is the only version of "wired into CI so it cannot silently
+      # stop running" (#56) that survives someone narrowing the glob: the
+      # database exists only if the eval suite ran in the run above, and
+      # what its last corpus run filed through the real aperture must hold
+      # facts, each disclosed exactly once. FR-72 is the claim that holds of
+      # any corpus that crossed: the harness chains under a key of its own,
+      # so this run's key cannot verify its chain.
+      #
+      # THE MODEL-INVOKING EVALS (`eval:extraction`, `eval:probe`,
+      # `eval:probe-days`, and their successors) RUN ON DEMAND, never here:
+      # by the agent working a ticket when the contract they measure
+      # changes, before and after, with both reports committed (#59, #139,
+      # #148), and at slice boundaries. They are an instrument, not a test.
+      # A repo secret must never be able to turn CI into a model gate
+      # (Diego's ruling on PR #152's run, 2026-09-03).
+      - name: Eval harness at the seam (scripted model, ticket #56)
+        if: contains(steps.kept.outputs.held, ' dito_test_evals_extraction_precision ')
+        env:
+          DITO_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test_evals_extraction_precision?sslmode=disable
+        run: node scripts/fr72-check.mjs --require-corpus
+
+  # THE PLANE'S SUITE, BESIDE THE VITEST LANE RATHER THAN AFTER IT (ticket
+  # #390). The integration runner is CPU-bound once its files run in
+  # parallel, and nothing here reads what the vitest run leaves: each Go test
+  # binary works on a database of its own on this job's own server. It builds
+  # the TypeScript workspace because the Go↔TS envelope test imports the
+  # built dist.
+  plane-integration:
+    name: plane integration (real Postgres, real KMS)
+    runs-on: ubuntu-latest
+    env:
+      DITO_TEST_DATABASE_URL: postgres://dito:dito@localhost:5433/dito_test?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+
+      # POSTGRES FROM A STEP, PULLED SIGNED IN (2026-10-12): the public
+      # registry caps anonymous pulls by data and the lane's five jobs per run
+      # tipped it over on `main`. A service container cannot sign in first;
+      # `scripts/ci-postgres.sh` loads the job's cached image, or pulls it
+      # signed in with the AWS keys where present, then waits for health as
+      # the service did.
+      - name: Cache the Postgres image
+        uses: actions/cache@v4
+        with:
+          path: /tmp/ci-postgres-image.tar
+          key: ci-postgres-image-${{ runner.os }}-postgres16-v1
+
+      - name: Start Postgres
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: scripts/ci-postgres.sh
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # THE ATLAS CACHE (ticket #88). `scripts/ensure-atlas.sh` downloads the
+      # pinned migration tool, and it runs inside a test's `beforeAll` by way
+      # of `migrate.sh`. Nothing cached `.tools`, so EVERY run fetched a
+      # binary from a third-party host before it could migrate — and when
+      # that host was unreachable (PR #87) the failure read as a test
+      # failure. Keyed on the pinned version, so a bump misses the cache and
+      # re-downloads; `restore-keys` is deliberately absent, since an older
+      # binary restored under a new key is exactly the wrong hit.
+      - name: Atlas version (cache key)
+        id: atlas
+        run: echo "version=$(scripts/ensure-atlas.sh --print-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the Atlas binary
+        uses: actions/cache@v4
+        with:
+          # THE BINARY, NOT THE DIRECTORY. `.tools` is also where the FR-73
+          # suite mints its corpus — a provisioned twin bundle and its
+          # manifest — and where the rig keeps `dito-plane`. Caching the
+          # directory would upload a twin bundle to the Actions cache and
+          # could restore a STALE corpus into a run whose FR-73 step then
+          # audits it. One file, deliberately.
+          path: .tools/atlas
+          key: atlas-${{ runner.os }}-${{ runner.arch }}-${{ steps.atlas.outputs.version }}
+
+      # The seam tests import @dito/crypto through its built entry point, so
+      # the integration runner builds too — it shares no filesystem with the
+      # unit job.
+      - name: Build
+        run: pnpm build
+
+      # ADR-0028: the crypto path is never mocked. When the AWS secrets are
+      # absent the KMS tests are SKIPPED — loudly, as a workflow warning and
+      # in the job summary — never emulated, never silently green.
+      - name: Check AWS secrets
+        id: aws
+        env:
+          KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          missing=""
+          [ -z "$KEY_ID" ] && missing="AWS_ACCESS_KEY_ID"
+          [ -z "$SECRET" ] && missing="${missing:+$missing, }AWS_SECRET_ACCESS_KEY"
+          if [ -n "$missing" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=KMS integration tests SKIPPED::Repo secret(s) $missing not configured. The real-KMS crypto tests AND the FR-73 store-enumeration invariant were SKIPPED, not passed (ADR-0028: never mocked). Add the secrets to run them."
+            {
+              echo "## :warning: KMS integration tests SKIPPED"
+              echo ""
+              echo "Missing repo secret(s): \`$missing\` (optionally \`AWS_REGION\`)."
+              echo "The real-KMS crypto tests were **skipped, not passed** — the crypto path is never mocked (ADR-0028)."
+              echo "The **FR-73 store-enumeration invariant did not run** either (its corpus is a real KMS-provisioned twin) — this run proves nothing about bundle residency."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: false
+
+      # Plane seam tests (tickets #21/#22) run against real Postgres and the
+      # same real KMS. DITO_REQUIRE_DB turns the local loud-skip into
+      # a failure here — in CI an unreachable database is never a green — and
+      # DITO_REQUIRE_CROSSLANG requires the Go↔TS envelope compatibility test
+      # (the dist is built above). The KMS tests mirror the TS lane: skipped
+      # loudly when the AWS secrets are absent, required when present.
+      # Packages run at once: each test binary works on a database of its
+      # own, named from `DITO_TEST_DATABASE_URL` and migrated by Atlas
+      # (`plane/internal/testdb`, ticket #390), so one package truncating the
+      # seam cannot reach another's rows.
+      - name: Plane integration tests (go test, real Postgres + real KMS)
+        working-directory: plane
+        env:
+          DITO_REQUIRE_DB: "1"
+          DITO_REQUIRE_CROSSLANG: "1"
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          DITO_SKIP_KMS_TESTS: ${{ steps.aws.outputs.present == 'true' && '0' || '1' }}
+          DITO_REQUIRE_KMS: ${{ steps.aws.outputs.present == 'true' && '1' || '0' }}
+        run: go test ./...
+
+  # EVERY CHECKED SUITE RAN, AND ITS CHECKS RAN ONCE (ticket #390). Each
+  # check above runs only on the runner that kept its suite's database, so a
+  # suite that no runner ran — a renamed file, a narrowed glob — would leave
+  # its checks skipped rather than red. This job adds up the three runners'
+  # lists and fails unless every database the checks read was kept by exactly
+  # one of them. The list is `KEPT_FOR_CHECKS` under this workflow's base, and
+  # the unit suite beside it holds the two together.
+  integration-checks:
+    name: integration checks covered
+    needs: integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: kept-databases-*
+          path: kept
+          merge-multiple: true
+
+      - name: Every kept database, kept by exactly one runner
+        run: |
+          cat kept/*.txt | sort > held.txt
+          missing=0
+          for name in \
+            dito_test_twin_runtime_send_lock_writer \
+            dito_test_twin_runtime_crossing \
+            dito_test_twin_runtime_extraction \
+            dito_test_twin_runtime_corrections \
+            dito_test_twin_runtime_drafting \
+            dito_test_twin_runtime_thread \
+            dito_test_twin_runtime_dashboard_acts \
+            dito_test_owner_twin_turn \
+            dito_test_twin_runtime_fr73 \
+            dito_test_twin_runtime_audit_coverage \
+            dito_test_aperture_shadow_lift \
+            dito_test_evals_extraction_precision; do
+            count=$(grep -cx "$name" held.txt || true)
+            if [ "$count" != "1" ]; then
+              echo "::error title=Checked suite not kept once::$name was kept by $count runner(s); its checks did not run exactly once"
+              missing=1
+            fi
+          done
+          exit $missing

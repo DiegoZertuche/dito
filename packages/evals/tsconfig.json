@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    // The live lane runs its script and the seam-driving harness through
+    // `node --experimental-strip-types`, which resolves the specifier it is
+    // GIVEN rather than remapping `.js` onto a `.ts` file. Those files are
+    // excluded from the build (`scripts/`, and `src/testing` by convention),
+    // so a `.ts` specifier there emits nothing and breaks nothing — and
+    // including `scripts` here means this package's rig-shaped script is
+    // typechecked, which #51's remainder 10 recorded as missing everywhere
+    // else.
+    "allowImportingTsExtensions": true,
+    // The other half of that same sentence, added by #79. This package has no
+    // build at all: everything in it — `scripts/`, `src/`, and the two other
+    // packages' `src/testing` it pulls in by `.ts` specifier — is executed by
+    // the stripper or by vitest, never compiled. The stripper deletes types,
+    // it does not transpile, so an enum, a namespace or a
+    // `constructor(private x)` throws ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX at
+    // runtime while typechecking clean. Same wrong-assumption green #79 closed
+    // for the rig scripts; same one-line answer.
+    "erasableSyntaxOnly": true
+  },
+  "include": ["src", "scripts"]
+}

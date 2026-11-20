@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"]
+  },
+  // `scripts` is listed before there is a `scripts/` here, so the first one
+  // added is typechecked the day it lands (#79).
+  "include": ["src", "scripts"]
+}

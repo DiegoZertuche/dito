@@ -1,0 +1,24 @@
+{
+  "name": "@dito/owner-twin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@dito/aperture": "workspace:*",
+    "@dito/audit": "workspace:*",
+    "@dito/execution": "workspace:*",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@dito/scripted-model": "workspace:*",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
+    "typescript": "^5.8.0"
+  }
+}

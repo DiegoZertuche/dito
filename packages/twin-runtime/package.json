@@ -1,0 +1,38 @@
+{
+  "name": "@dito/twin-runtime",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p scripts/tsconfig.json",
+    "smoke:embed": "node --experimental-strip-types scripts/embed-smoke.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-kms": "^3.1118.0",
+    "@dito/aperture": "workspace:*",
+    "@dito/audit": "workspace:*",
+    "@dito/bundle": "workspace:*",
+    "@dito/crypto": "workspace:*",
+    "@dito/execution": "workspace:*",
+    "@dito/seam": "workspace:*",
+    "@huggingface/transformers": "^3.5.0",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@dito/copy": "workspace:*",
+    "@dito/notify": "workspace:*",
+    "@dito/scripted-model": "workspace:*",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
+    "typescript": "^5.8.0"
+  }
+}

@@ -1,0 +1,28 @@
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+.tools/
+.env
+.env.*
+.env.rig
+rig-data/
+# Next's build output and the type shim it regenerates on every build
+# (#129). `.next/` is also an eslint ignore, because `projectService` treats
+# a file no tsconfig describes as a parse error rather than a skip.
+.next/
+# Agent scratch: ticket bodies and specs pulled down for review, never
+# committed.
+.scratch/
+# The live lanes' turn capture (#148). `DITO_EVAL_CAPTURE=<path>` appends
+# one JSON line per model call — the turns verbatim, every tool input, the
+# usage. It is EVIDENCE for a measurement, read while the numbers are being
+# argued about and then thrown away; the artifact that survives is the
+# report in `packages/evals/reports/`. It is ignored rather than committed
+# for the same reason `rig-data/` is: a capture from the rig would be a
+# rep's real conversations, and the difference between a corpus capture and
+# a rig one is a flag on a command line.
+capture/
+# The owner app's SDK child directory (#328), a sibling of its working
+# directory: the CLI's own config and cache, never committed.
+apps/owner-web.harness/

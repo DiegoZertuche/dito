@@ -1,0 +1,41 @@
+-- The correction window closes (ticket #54; spec #48 grilling decision 15;
+-- ADR-0004; FR-35).
+--
+-- A fact nobody corrects finalizes 24 hours after the rep COULD ACTUALLY
+-- HAVE READ the statement disclosing it — not 24 hours after it was filed.
+-- ADR-0004 is explicit: facts "self-finalize after 24h — but the clock
+-- starts only once the fact's disclosure line is rep-reachable". A
+-- disclosure that arrived while the rep was asleep must not finalize before
+-- they have seen it, and a disclosure that never arrived at all must not
+-- finalize at all.
+--
+-- REP-REACHABLE IS A QUESTION ABOUT DELIVERY, and it is asked where
+-- delivery is known: the disclosure post's `system_send` resolving `sent`
+-- (…100004's outcome, paired with its `executed_at` by CHECK). A post whose
+-- send `failed`, was `held`, or is still in flight reached nobody, so the
+-- lines it carried are still owed — which is exactly what
+-- `readPendingLines` already concluded for the pass that writes the posts
+-- (ticket #51). The two agree by construction: both ask `send_commands`.
+--
+-- WHAT THIS MIGRATION IS. One column privilege, on the same terms as the
+-- retraction's (…100040) and for the same reason (…100012: "a reviewable
+-- migration each, rather than a privilege nobody notices"). The clock
+-- itself is code, and it takes an EXPLICIT `now` — the `reconcileFr70At`
+-- shape, no clock seam, no fake timers — so nothing about when the pass
+-- happens to run can change what it decides.
+--
+-- WHAT IT IS NOT. It does not touch `shadow`. Every fact this slice files
+-- is shadow, a finalized fact is still shadow, and `ledger.finalized_facts`
+-- requires BOTH — so finalization moves a row one step closer to being
+-- readable and no owner can see it either way. Flipping the flag is slice
+-- 4's, gated by Test 4 (ADR-0016).
+--
+-- NUMBERING: the …10004x range, as …100040 explains.
+
+-- Exactly `finalized_at`, and nothing else. The stored value is
+-- `reachable_at + 24 hours` rather than the instant the pass noticed — the
+-- fact became final when the window closed, whether or not anything was
+-- running — so re-running the pass at any later `now` recomputes the same
+-- timestamp and the annotation is idempotent in VALUE, not merely in
+-- effect.
+GRANT UPDATE (finalized_at) ON ledger.facts TO dito_aperture;

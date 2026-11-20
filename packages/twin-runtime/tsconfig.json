@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"]
+  },
+  // `scripts` is absent here, unlike the other packages, because it is
+  // covered by `scripts/tsconfig.json` instead — those files run under
+  // `node --experimental-strip-types` and need a different module resolution
+  // from the one that compiles `src/` into `dist/`. The package's `typecheck`
+  // script runs both configs; neither directory is uncovered (#79).
+  "include": ["src"]
+}

@@ -1,0 +1,18 @@
+packages:
+  - packages/*
+  # The owner web (#129) is the first APP: a deployed process rather than a
+  # library, so it has no `main`, no `exports` and no `dist` — `next build`
+  # is its build. `packages/*` alone would have left it out of the workspace
+  # and its `workspace:*` dependency on @dito/aperture unresolvable.
+  - apps/*
+allowBuilds:
+  esbuild: true
+  better-sqlite3-multiple-ciphers: true
+  # The embedding runtime (#32) needs no install scripts: onnxruntime-node
+  # ships its CPU napi binaries in-package for every target we run
+  # (darwin/linux/win), protobufjs's postinstall is version bookkeeping,
+  # and sharp is transformers.js's optional image path — unused for text
+  # embeddings.
+  onnxruntime-node: false
+  protobufjs: false
+  sharp: false

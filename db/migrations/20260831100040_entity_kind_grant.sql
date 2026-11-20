@@ -1,0 +1,53 @@
+-- The kind determination's grant (ticket #60; ADR-0035, ADR-0003 as
+-- amended).
+--
+-- NO COLUMN CHANGES. `ledger.entities.kind` stays `NOT NULL` with the
+-- `CHECK (kind IN ('person', 'business'))` …100010 gave it. There is no
+-- third value and no NULL: a NULL kind can never phone-match, so a NULL
+-- entity's rung is INERT — which is the very defect this ticket exists to
+-- fix, relabelled rather than repaired. What changes is that the column
+-- stops being a default nobody chose: the model determines it at binding
+-- confirmation, and every existing row is re-inferred.
+--
+-- WHICH MAKES THE COLUMN WRITABLE FOR THE FIRST TIME, and that is the whole
+-- of this migration. Until now the aperture held INSERT and SELECT on
+-- `ledger.entities` and no UPDATE at all — not table-wide, and not on any
+-- column (verified against the migrated schema before this was written).
+-- A determination that is always made is a determination that is sometimes
+-- wrong, and a wrong one changes merge eligibility, so it has to be
+-- correctable; correcting it is an UPDATE, and an UPDATE that was never
+-- granted is a live runtime failure the day a process authenticates as
+-- `dito_aperture` rather than as the schema owner.
+--
+-- COLUMN-LEVEL, WHICH IS ALSO THE CLASS-1 FENCE. …100012 refused table-wide
+-- UPDATE on the Ledger because "a blanket UPDATE is a rename without a
+-- disclosure waiting to happen", and promised that the paths which do
+-- annotate would arrive with column grants instead — "a reviewable
+-- migration each, rather than a privilege nobody notices". This is that
+-- migration, and the promise is load-bearing here in a way it was not for
+-- finalization: the kind is CLASS-1 MODEL OUTPUT (ADR-0003), and class-1
+-- output may never create or rename an entity. With this grant the aperture
+-- can set `kind` and cannot touch `display_name`. What that buys TODAY is the
+-- grant audit, which is red the moment either half stops being true — no
+-- process authenticates as `dito_aperture` yet, a limitation …100012 and
+-- `consumer.ts` both record — and the day one does, a model-laundered rename
+-- fails on a privilege rather than on anybody's discipline. Creating still
+-- takes class-2 rep-act evidence, and no path here creates anything.
+--
+-- The grant audit (`scripts/ledger-grants-check.mjs`) checks this column in
+-- BOTH directions: declared-but-missing means the correction path is
+-- broken, and granted-but-undeclared is a table-wide UPDATE being assembled
+-- one column at a time.
+--
+-- A KIND CHANGE IS NOT DISCLOSED. ADR-0003 as amended discloses an entity
+-- mutation when it carries rep-derived content across the wall — create and
+-- rename, both of which put a name from the rep's conversation into the
+-- Ledger for the first time — and not when it restructures what already
+-- crossed. A kind flip carries no name and files no fact. It does change
+-- merge eligibility, which is the argument the other way, and that argument
+-- fails on its own terms: the merge itself is not disclosed, so a change to
+-- what a merge is eligible for cannot owe the rep more of a disclosure than
+-- the merge itself does.
+--
+-- NUMBERING: the …2026083110002x range, reserved for this ticket.
+GRANT UPDATE (kind) ON ledger.entities TO dito_aperture;

@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    // better-sqlite3-multiple-ciphers ships index.d.ts but its exports map
+    // has no "types" condition, so NodeNext cannot see it without this.
+    "paths": {
+      "better-sqlite3-multiple-ciphers": [
+        "./node_modules/better-sqlite3-multiple-ciphers/index.d.ts"
+      ]
+    }
+  },
+  // `scripts` is listed before there is a `scripts/` here, so the first one
+  // added is typechecked the day it lands (#79). A strip-types script needs
+  // `packages/twin-runtime/scripts/tsconfig.json`'s mode, not this one.
+  "include": ["src", "scripts"]
+}

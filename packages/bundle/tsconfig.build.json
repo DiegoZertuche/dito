@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": ["node"],
+    "baseUrl": ".",
+    // better-sqlite3-multiple-ciphers ships index.d.ts but its exports map
+    // has no "types" condition, so NodeNext cannot see it without this.
+    "paths": {
+      "better-sqlite3-multiple-ciphers": [
+        "./node_modules/better-sqlite3-multiple-ciphers/index.d.ts"
+      ]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/testing"]
+}

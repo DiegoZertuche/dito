@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": ["node"]
+  },
+  "include": ["src"],
+  // NO `src/testing` EXCLUSION HERE, and the difference is the point of the
+  // package: every other package's test plumbing is source-only and excluded
+  // from its build, which is exactly why the wire could not be shared. This
+  // package IS the plumbing, so it builds — and both consumers reach it as a
+  // devDependency through `dist`, not through each other's source.
+  "exclude": ["src/**/*.test.ts"]
+}

@@ -1,0 +1,53 @@
+{
+  // `scripts/` runs in a DIFFERENT MODE from the rest of this package, which
+  // is why it gets its own config rather than a line in the package's
+  // `include`. `src/` is compiled by `tsc` into `dist/` and run as JavaScript;
+  // these files are handed to `node --experimental-strip-types` as `.ts` and
+  // run where they lie (`rig.sh`, and the `smoke:*` scripts in package.json).
+  //
+  // Two consequences, and both are the reason this file exists:
+  //
+  //   1. A relative specifier must carry `.ts`. Node's stripper resolves the
+  //      specifier it is GIVEN — it does not remap `.js` onto a `.ts` file the
+  //      way `tsc` does. `./rig-env.js` typechecks and then dies at runtime
+  //      with ERR_MODULE_NOT_FOUND, in front of the phone. So the four
+  //      `./rig-env.ts` specifiers are correct as written, and the config is
+  //      what had to change.
+  //   2. The syntax must be erasable. The stripper deletes types, it does not
+  //      transpile: an enum, a namespace or a `constructor(private x)` throws
+  //      ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX. `tsc` would have compiled all
+  //      three happily, so without this flag the typecheck would be green
+  //      about code that cannot run.
+  //
+  // `src/` gets neither flag, deliberately. A `.ts` specifier there IS an
+  // error — `tsc` emits no `.ts` file to resolve it to — and enums there are
+  // fine. Typechecking both halves under one set of assumptions would make
+  // this config lie about one of them.
+  //
+  // No `include`: TypeScript's default is `**/*` under this file's directory,
+  // so a script added here is covered without anyone remembering to list it.
+  //
+  // `erasableSyntaxOnly` is TypeScript 5.8+, which is why this package's
+  // `typescript` floor is `^5.8.0` where the others still say `^5.7.3`.
+  //
+  // TWO THINGS THIS CONFIG STILL DOES NOT CATCH, named so nobody reads its
+  // green as more than it is:
+  //
+  //   - A DECORATOR. `erasableSyntaxOnly` covers the three constructs above
+  //     and not this one: a well-typed decorator draws no diagnostic here and
+  //     the stripper rejects it with a SyntaxError. No script has a class, let
+  //     alone a decorator, so this is recorded rather than guarded — catching
+  //     it needs a Node-parse step, and #79 was not to add a step.
+  //   - A STALE `dist/`. These scripts import `../dist/index.js`, so they are
+  //     checked against the last build's `.d.ts`. CI builds first
+  //     (ci.yml) and README's loop is `pnpm build` then `pnpm typecheck`; run
+  //     out of that order over an old `dist/`, this goes green on a signature
+  //     that has since changed — which is the #75 break exactly.
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true
+  }
+}

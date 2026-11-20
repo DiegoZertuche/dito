@@ -1,0 +1,2200 @@
+{
+  "ranAt": "2026-08-30T20:54:30.189Z",
+  "model": "claude-haiku-4-5",
+  "extractorDigest": "4b7ed24c07668b09127470ff118200a9",
+  "corpus": {
+    "transcripts": 35,
+    "messages": 190,
+    "labels": 113,
+    "digest": "393843ed8029b984c27b4bfaba7b753e",
+    "excludedFactTypes": {
+      "CustomerPattern": "Deferred by spec #48 grilling decision 5, and NOT because it is hard. FR-30 defines it narrowly and warns by name against 'rep tactics, judgments, or selling approach', and ADR-0035 names an entity-less observation slot as the natural drain for exactly the rep-level inference ADR-0033 exists to prevent. Its false positives are aperture BREACHES rather than noise — a wrong QuoteGiven is a wrong number in a record the rep can correct, a wrong CustomerPattern is the rep's employer reading a judgment about the rep. Precision measured across the two would average a recoverable error with an unrecoverable one and report a single reassuring number. It joins this corpus when it is extracted, with its own labels and — this is the part that must not be skipped — its own reported number beside the others, never folded in."
+    }
+  },
+  "bar": 0.95,
+  "minCrossingsForConfidence": 80,
+  "underpowered": false,
+  "overall": {
+    "crossed": 105,
+    "correct": 78,
+    "precision": 0.7428571428571429,
+    "interval": {
+      "low": 0.65173054142379,
+      "high": 0.816840906924928
+    }
+  },
+  "clusters": 35,
+  "overallClusterInterval": {
+    "low": 0.6793893129770993,
+    "high": 0.8037383177570093
+  },
+  "byFactType": {
+    "ContactEstablished": {
+      "crossed": 15,
+      "correct": 15,
+      "precision": 1,
+      "interval": {
+        "low": 0.7961166989641515,
+        "high": 1
+      }
+    },
+    "DatePromised": {
+      "crossed": 19,
+      "correct": 17,
+      "precision": 0.8947368421052632,
+      "interval": {
+        "low": 0.6860591728889099,
+        "high": 0.9706414397011299
+      }
+    },
+    "OrderRequested": {
+      "crossed": 24,
+      "correct": 19,
+      "precision": 0.7916666666666666,
+      "interval": {
+        "low": 0.5952954674681133,
+        "high": 0.9075517464714814
+      }
+    },
+    "OrderTaken": {
+      "crossed": 20,
+      "correct": 5,
+      "precision": 0.25,
+      "interval": {
+        "low": 0.11186170140766569,
+        "high": 0.468700877618744
+      }
+    },
+    "QuoteGiven": {
+      "crossed": 27,
+      "correct": 22,
+      "precision": 0.8148148148148148,
+      "interval": {
+        "low": 0.6330131638145156,
+        "high": 0.9181929285702346
+      }
+    }
+  },
+  "recall": 0.6902654867256637,
+  "questionsRaised": 1,
+  "questioned": [
+    {
+      "transcriptId": "b-dia-completo-ruiz",
+      "messageId": "BB-01",
+      "factType": "OrderRequested",
+      "confidence": 0.95,
+      "reading": "unresolved_reference"
+    }
+  ],
+  "confidence": {
+    "gate": 0.8,
+    "middleBand": {
+      "from": 0.7,
+      "to": 0.9
+    },
+    "inMiddleBand": 3,
+    "overall": {
+      "graded": {
+        "n": 106,
+        "min": 0.85,
+        "max": 1,
+        "median": 0.95,
+        "bands": [
+          {
+            "from": 0,
+            "to": 0.5,
+            "n": 0
+          },
+          {
+            "from": 0.5,
+            "to": 0.6,
+            "n": 0
+          },
+          {
+            "from": 0.6,
+            "to": 0.7,
+            "n": 0
+          },
+          {
+            "from": 0.7,
+            "to": 0.8,
+            "n": 0
+          },
+          {
+            "from": 0.8,
+            "to": 0.85,
+            "n": 0
+          },
+          {
+            "from": 0.85,
+            "to": 0.9,
+            "n": 3
+          },
+          {
+            "from": 0.9,
+            "to": 0.95,
+            "n": 2
+          },
+          {
+            "from": 0.95,
+            "to": 1,
+            "n": 101
+          }
+        ],
+        "distinct": [
+          {
+            "value": 0.85,
+            "n": 3
+          },
+          {
+            "value": 0.9,
+            "n": 2
+          },
+          {
+            "value": 0.95,
+            "n": 59
+          },
+          {
+            "value": 0.98,
+            "n": 1
+          },
+          {
+            "value": 0.99,
+            "n": 4
+          },
+          {
+            "value": 1,
+            "n": 37
+          }
+        ]
+      },
+      "filed": {
+        "n": 105,
+        "min": 0.85,
+        "max": 1,
+        "median": 0.95,
+        "bands": [
+          {
+            "from": 0,
+            "to": 0.5,
+            "n": 0
+          },
+          {
+            "from": 0.5,
+            "to": 0.6,
+            "n": 0
+          },
+          {
+            "from": 0.6,
+            "to": 0.7,
+            "n": 0
+          },
+          {
+            "from": 0.7,
+            "to": 0.8,
+            "n": 0
+          },
+          {
+            "from": 0.8,
+            "to": 0.85,
+            "n": 0
+          },
+          {
+            "from": 0.85,
+            "to": 0.9,
+            "n": 3
+          },
+          {
+            "from": 0.9,
+            "to": 0.95,
+            "n": 2
+          },
+          {
+            "from": 0.95,
+            "to": 1,
+            "n": 100
+          }
+        ],
+        "distinct": [
+          {
+            "value": 0.85,
+            "n": 3
+          },
+          {
+            "value": 0.9,
+            "n": 2
+          },
+          {
+            "value": 0.95,
+            "n": 58
+          },
+          {
+            "value": 0.98,
+            "n": 1
+          },
+          {
+            "value": 0.99,
+            "n": 4
+          },
+          {
+            "value": 1,
+            "n": 37
+          }
+        ]
+      },
+      "questioned": {
+        "n": 1,
+        "min": 0.95,
+        "max": 0.95,
+        "median": 0.95,
+        "bands": [
+          {
+            "from": 0,
+            "to": 0.5,
+            "n": 0
+          },
+          {
+            "from": 0.5,
+            "to": 0.6,
+            "n": 0
+          },
+          {
+            "from": 0.6,
+            "to": 0.7,
+            "n": 0
+          },
+          {
+            "from": 0.7,
+            "to": 0.8,
+            "n": 0
+          },
+          {
+            "from": 0.8,
+            "to": 0.85,
+            "n": 0
+          },
+          {
+            "from": 0.85,
+            "to": 0.9,
+            "n": 0
+          },
+          {
+            "from": 0.9,
+            "to": 0.95,
+            "n": 0
+          },
+          {
+            "from": 0.95,
+            "to": 1,
+            "n": 1
+          }
+        ],
+        "distinct": [
+          {
+            "value": 0.95,
+            "n": 1
+          }
+        ]
+      },
+      "correct": {
+        "n": 78,
+        "min": 0.85,
+        "max": 1,
+        "median": 0.95,
+        "bands": [
+          {
+            "from": 0,
+            "to": 0.5,
+            "n": 0
+          },
+          {
+            "from": 0.5,
+            "to": 0.6,
+            "n": 0
+          },
+          {
+            "from": 0.6,
+            "to": 0.7,
+            "n": 0
+          },
+          {
+            "from": 0.7,
+            "to": 0.8,
+            "n": 0
+          },
+          {
+            "from": 0.8,
+            "to": 0.85,
+            "n": 0
+          },
+          {
+            "from": 0.85,
+            "to": 0.9,
+            "n": 1
+          },
+          {
+            "from": 0.9,
+            "to": 0.95,
+            "n": 1
+          },
+          {
+            "from": 0.95,
+            "to": 1,
+            "n": 76
+          }
+        ],
+        "distinct": [
+          {
+            "value": 0.85,
+            "n": 1
+          },
+          {
+            "value": 0.9,
+            "n": 1
+          },
+          {
+            "value": 0.95,
+            "n": 41
+          },
+          {
+            "value": 0.98,
+            "n": 1
+          },
+          {
+            "value": 0.99,
+            "n": 4
+          },
+          {
+            "value": 1,
+            "n": 30
+          }
+        ]
+      },
+      "wrong": {
+        "n": 27,
+        "min": 0.85,
+        "max": 1,
+        "median": 0.95,
+        "bands": [
+          {
+            "from": 0,
+            "to": 0.5,
+            "n": 0
+          },
+          {
+            "from": 0.5,
+            "to": 0.6,
+            "n": 0
+          },
+          {
+            "from": 0.6,
+            "to": 0.7,
+            "n": 0
+          },
+          {
+            "from": 0.7,
+            "to": 0.8,
+            "n": 0
+          },
+          {
+            "from": 0.8,
+            "to": 0.85,
+            "n": 0
+          },
+          {
+            "from": 0.85,
+            "to": 0.9,
+            "n": 2
+          },
+          {
+            "from": 0.9,
+            "to": 0.95,
+            "n": 1
+          },
+          {
+            "from": 0.95,
+            "to": 1,
+            "n": 24
+          }
+        ],
+        "distinct": [
+          {
+            "value": 0.85,
+            "n": 2
+          },
+          {
+            "value": 0.9,
+            "n": 1
+          },
+          {
+            "value": 0.95,
+            "n": 17
+          },
+          {
+            "value": 1,
+            "n": 7
+          }
+        ]
+      }
+    },
+    "byFactType": {
+      "ContactEstablished": {
+        "graded": {
+          "n": 15,
+          "min": 0.95,
+          "max": 1,
+          "median": 1,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 15
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.95,
+              "n": 5
+            },
+            {
+              "value": 1,
+              "n": 10
+            }
+          ]
+        },
+        "filed": {
+          "n": 15,
+          "min": 0.95,
+          "max": 1,
+          "median": 1,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 15
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.95,
+              "n": 5
+            },
+            {
+              "value": 1,
+              "n": 10
+            }
+          ]
+        },
+        "questioned": {
+          "n": 0,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 0
+            }
+          ],
+          "distinct": []
+        },
+        "correct": {
+          "n": 15,
+          "min": 0.95,
+          "max": 1,
+          "median": 1,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 15
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.95,
+              "n": 5
+            },
+            {
+              "value": 1,
+              "n": 10
+            }
+          ]
+        },
+        "wrong": {
+          "n": 0,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 0
+            }
+          ],
+          "distinct": []
+        }
+      },
+      "DatePromised": {
+        "graded": {
+          "n": 19,
+          "min": 0.85,
+          "max": 1,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 1
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 1
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 17
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.85,
+              "n": 1
+            },
+            {
+              "value": 0.9,
+              "n": 1
+            },
+            {
+              "value": 0.95,
+              "n": 9
+            },
+            {
+              "value": 0.98,
+              "n": 1
+            },
+            {
+              "value": 1,
+              "n": 7
+            }
+          ]
+        },
+        "filed": {
+          "n": 19,
+          "min": 0.85,
+          "max": 1,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 1
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 1
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 17
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.85,
+              "n": 1
+            },
+            {
+              "value": 0.9,
+              "n": 1
+            },
+            {
+              "value": 0.95,
+              "n": 9
+            },
+            {
+              "value": 0.98,
+              "n": 1
+            },
+            {
+              "value": 1,
+              "n": 7
+            }
+          ]
+        },
+        "questioned": {
+          "n": 0,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 0
+            }
+          ],
+          "distinct": []
+        },
+        "correct": {
+          "n": 17,
+          "min": 0.9,
+          "max": 1,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 1
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 16
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.9,
+              "n": 1
+            },
+            {
+              "value": 0.95,
+              "n": 8
+            },
+            {
+              "value": 0.98,
+              "n": 1
+            },
+            {
+              "value": 1,
+              "n": 7
+            }
+          ]
+        },
+        "wrong": {
+          "n": 2,
+          "min": 0.85,
+          "max": 0.95,
+          "median": 0.8999999999999999,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 1
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 1
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.85,
+              "n": 1
+            },
+            {
+              "value": 0.95,
+              "n": 1
+            }
+          ]
+        }
+      },
+      "OrderRequested": {
+        "graded": {
+          "n": 25,
+          "min": 0.95,
+          "max": 1,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 25
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.95,
+              "n": 15
+            },
+            {
+              "value": 0.99,
+              "n": 2
+            },
+            {
+              "value": 1,
+              "n": 8
+            }
+          ]
+        },
+        "filed": {
+          "n": 24,
+          "min": 0.95,
+          "max": 1,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 24
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.95,
+              "n": 14
+            },
+            {
+              "value": 0.99,
+              "n": 2
+            },
+            {
+              "value": 1,
+              "n": 8
+            }
+          ]
+        },
+        "questioned": {
+          "n": 1,
+          "min": 0.95,
+          "max": 0.95,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 1
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.95,
+              "n": 1
+            }
+          ]
+        },
+        "correct": {
+          "n": 19,
+          "min": 0.95,
+          "max": 1,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 19
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.95,
+              "n": 11
+            },
+            {
+              "value": 0.99,
+              "n": 2
+            },
+            {
+              "value": 1,
+              "n": 6
+            }
+          ]
+        },
+        "wrong": {
+          "n": 5,
+          "min": 0.95,
+          "max": 1,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 5
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.95,
+              "n": 3
+            },
+            {
+              "value": 1,
+              "n": 2
+            }
+          ]
+        }
+      },
+      "OrderTaken": {
+        "graded": {
+          "n": 20,
+          "min": 0.85,
+          "max": 1,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 2
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 1
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 17
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.85,
+              "n": 2
+            },
+            {
+              "value": 0.9,
+              "n": 1
+            },
+            {
+              "value": 0.95,
+              "n": 11
+            },
+            {
+              "value": 1,
+              "n": 6
+            }
+          ]
+        },
+        "filed": {
+          "n": 20,
+          "min": 0.85,
+          "max": 1,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 2
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 1
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 17
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.85,
+              "n": 2
+            },
+            {
+              "value": 0.9,
+              "n": 1
+            },
+            {
+              "value": 0.95,
+              "n": 11
+            },
+            {
+              "value": 1,
+              "n": 6
+            }
+          ]
+        },
+        "questioned": {
+          "n": 0,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 0
+            }
+          ],
+          "distinct": []
+        },
+        "correct": {
+          "n": 5,
+          "min": 0.85,
+          "max": 1,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 1
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 4
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.85,
+              "n": 1
+            },
+            {
+              "value": 0.95,
+              "n": 3
+            },
+            {
+              "value": 1,
+              "n": 1
+            }
+          ]
+        },
+        "wrong": {
+          "n": 15,
+          "min": 0.85,
+          "max": 1,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 1
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 1
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 13
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.85,
+              "n": 1
+            },
+            {
+              "value": 0.9,
+              "n": 1
+            },
+            {
+              "value": 0.95,
+              "n": 8
+            },
+            {
+              "value": 1,
+              "n": 5
+            }
+          ]
+        }
+      },
+      "QuoteGiven": {
+        "graded": {
+          "n": 27,
+          "min": 0.95,
+          "max": 1,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 27
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.95,
+              "n": 19
+            },
+            {
+              "value": 0.99,
+              "n": 2
+            },
+            {
+              "value": 1,
+              "n": 6
+            }
+          ]
+        },
+        "filed": {
+          "n": 27,
+          "min": 0.95,
+          "max": 1,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 27
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.95,
+              "n": 19
+            },
+            {
+              "value": 0.99,
+              "n": 2
+            },
+            {
+              "value": 1,
+              "n": 6
+            }
+          ]
+        },
+        "questioned": {
+          "n": 0,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 0
+            }
+          ],
+          "distinct": []
+        },
+        "correct": {
+          "n": 22,
+          "min": 0.95,
+          "max": 1,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 22
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.95,
+              "n": 14
+            },
+            {
+              "value": 0.99,
+              "n": 2
+            },
+            {
+              "value": 1,
+              "n": 6
+            }
+          ]
+        },
+        "wrong": {
+          "n": 5,
+          "min": 0.95,
+          "max": 0.95,
+          "median": 0.95,
+          "bands": [
+            {
+              "from": 0,
+              "to": 0.5,
+              "n": 0
+            },
+            {
+              "from": 0.5,
+              "to": 0.6,
+              "n": 0
+            },
+            {
+              "from": 0.6,
+              "to": 0.7,
+              "n": 0
+            },
+            {
+              "from": 0.7,
+              "to": 0.8,
+              "n": 0
+            },
+            {
+              "from": 0.8,
+              "to": 0.85,
+              "n": 0
+            },
+            {
+              "from": 0.85,
+              "to": 0.9,
+              "n": 0
+            },
+            {
+              "from": 0.9,
+              "to": 0.95,
+              "n": 0
+            },
+            {
+              "from": 0.95,
+              "to": 1,
+              "n": 5
+            }
+          ],
+          "distinct": [
+            {
+              "value": 0.95,
+              "n": 5
+            }
+          ]
+        }
+      }
+    },
+    "ungradedCrossings": 0
+  },
+  "pass": {
+    "messages": 190,
+    "candidates": 111,
+    "filed": 105,
+    "belowThreshold": 0,
+    "unresolvedReference": 1,
+    "refused": 5
+  },
+  "wrong": [
+    {
+      "factId": "22d2afe2-5df9-4a34-8850-bd7b535bc389",
+      "transcriptId": "b-dia-completo-aguilar",
+      "messageId": "B3-02",
+      "factType": "OrderRequested",
+      "reason": "misattributed",
+      "detail": "no label on B3-02, though this day states a OrderRequested elsewhere",
+      "disclosureText": "Te pidió 80 varillas de varillas del 1/2 — sin precio, sin fecha.",
+      "confidence": 1
+    },
+    {
+      "factId": "a9d631bc-3ec9-45dd-9d82-9aaa63074812",
+      "transcriptId": "b-dia-completo-aguilar",
+      "messageId": "B3-05",
+      "factType": "OrderTaken",
+      "reason": "check_failed",
+      "detail": "requestedFor should be absent, was \"2026-09-11\"",
+      "disclosureText": "Le confirmaste el pedido de 80 varillas de varillas del 1/2 por 16,400 MXN para el viernes 11 de septiembre de 2026. Dijiste: «se las tengo el 11 de septiembre en la obra».",
+      "confidence": 1
+    },
+    {
+      "factId": "2ca97b29-66ca-462f-9a26-08d72f870ba2",
+      "transcriptId": "b-dia-completo-beltran",
+      "messageId": "B9-06",
+      "factType": "OrderTaken",
+      "reason": "check_failed",
+      "detail": "quantity should equal 30, was undefined",
+      "disclosureText": "Le confirmaste el pedido de lámina y solera para el sábado 19 de septiembre de 2026 — sin cantidad, sin precio. Dijiste: «todo junto se lo entrego el 19 de septiembre».",
+      "confidence": 0.95
+    },
+    {
+      "factId": "ce82fe82-e24c-4833-97b8-1e2bc2cac596",
+      "transcriptId": "b-dia-completo-fuentes",
+      "messageId": "B1-06",
+      "factType": "OrderTaken",
+      "reason": "check_failed",
+      "detail": "requestedFor should be absent, was \"2026-09-08\"",
+      "disclosureText": "Le confirmaste el pedido de 50 bultos de cemento por 9,800 MXN para el martes 8 de septiembre de 2026. Dijiste: «perfecto, se los entrego el 8 de septiembre».",
+      "confidence": 1
+    },
+    {
+      "factId": "4e8ec646-8860-4733-8e5d-cb74f30bbcfe",
+      "transcriptId": "b-dia-completo-golfo",
+      "messageId": "BD-02",
+      "factType": "OrderRequested",
+      "reason": "misattributed",
+      "detail": "no label on BD-02, though this day states a OrderRequested elsewhere",
+      "disclosureText": "Te pidió 150 varillas de varillas y bultos — sin precio, sin fecha.",
+      "confidence": 0.95
+    },
+    {
+      "factId": "2bba9f08-04ed-44fd-a817-9465b2944373",
+      "transcriptId": "b-dia-completo-golfo",
+      "messageId": "BD-06",
+      "factType": "OrderTaken",
+      "reason": "check_failed",
+      "detail": "requestedFor should be absent, was \"2026-09-29\"",
+      "disclosureText": "Le confirmaste el pedido de 150 varillas de varillas por 30,750 MXN para el martes 29 de septiembre de 2026. Dijiste: «se las entrego el 29 de septiembre».",
+      "confidence": 0.95
+    },
+    {
+      "factId": "31084be6-1675-4294-8ac3-d3e90d136aca",
+      "transcriptId": "b-dia-completo-lopez",
+      "messageId": "BF-06",
+      "factType": "OrderTaken",
+      "reason": "check_failed",
+      "detail": "requestedFor should be absent, was \"2026-10-02\"",
+      "disclosureText": "Le confirmaste el pedido de 70 sacos de estuco por 12,250 MXN para el viernes 2 de octubre de 2026. Dijiste: «listo, se los entrego el 2 de octubre».",
+      "confidence": 0.95
+    },
+    {
+      "factId": "06bd760f-2d11-43dc-85d7-c008d0e8fe73",
+      "transcriptId": "b-dia-completo-mixto",
+      "messageId": "BE-03",
+      "factType": "QuoteGiven",
+      "reason": "misattributed",
+      "detail": "no label on BE-03, though this day states a QuoteGiven elsewhere",
+      "disclosureText": "Le cotizaste 60 sacos de sacos en 13,200 MXN — sin fecha.",
+      "confidence": 0.95
+    },
+    {
+      "factId": "f6fcdfb2-729b-4d2f-a6eb-5f79110610a4",
+      "transcriptId": "b-dia-completo-mixto",
+      "messageId": "BE-06",
+      "factType": "OrderTaken",
+      "reason": "check_failed",
+      "detail": "requestedFor should be absent, was \"2026-09-27\"",
+      "disclosureText": "Le confirmaste el pedido de 60 sacos de sacos por 12,600 MXN para el domingo 27 de septiembre de 2026. Dijiste: «va, el 27 de septiembre los tiene».",
+      "confidence": 0.85
+    },
+    {
+      "factId": "a33c9b91-52ba-4062-95bb-9d865ee73f0b",
+      "transcriptId": "b-dia-completo-molina",
+      "messageId": "B4-06",
+      "factType": "OrderTaken",
+      "reason": "check_failed",
+      "detail": "requestedFor should be absent, was \"2026-09-15\"",
+      "disclosureText": "Le confirmaste el pedido de 12 perfiles por 7,320 MXN para el martes 15 de septiembre de 2026. Dijiste: «gracias, se los mando el 15 de septiembre».",
+      "confidence": 1
+    },
+    {
+      "factId": "55f82cd5-7625-4981-ad15-18102399c6c2",
+      "transcriptId": "b-dia-completo-norte",
+      "messageId": "B2-03",
+      "factType": "QuoteGiven",
+      "reason": "check_failed",
+      "detail": "quantity should be absent, was 1",
+      "disclosureText": "Le cotizaste 1 saco de mortero en 190 MXN — sin fecha.",
+      "confidence": 0.95
+    },
+    {
+      "factId": "b53d36c5-50e1-4ec0-bb22-40009d41df08",
+      "transcriptId": "b-dia-completo-norte",
+      "messageId": "B2-05",
+      "factType": "OrderTaken",
+      "reason": "check_failed",
+      "detail": "requestedFor should be absent, was \"2026-09-09\"",
+      "disclosureText": "Le confirmaste el pedido de 300 blocks para el miércoles 9 de septiembre de 2026 — sin precio. Dijiste: «listo. los blocks se los llevo el 9 de septiembre».",
+      "confidence": 0.95
+    },
+    {
+      "factId": "d1d0e41b-ba4e-4359-9e59-501b9bee2dcf",
+      "transcriptId": "b-dia-completo-papeleria",
+      "messageId": "BC-02",
+      "factType": "QuoteGiven",
+      "reason": "check_failed",
+      "detail": "quantity should be absent, was 1",
+      "disclosureText": "Le cotizaste 1 caja de archivo en 78 MXN — sin fecha.",
+      "confidence": 0.95
+    },
+    {
+      "factId": "f3c8f639-c768-46d1-be0a-6211bb497c85",
+      "transcriptId": "b-dia-completo-papeleria",
+      "messageId": "BC-04",
+      "factType": "OrderTaken",
+      "reason": "no_label_for_type",
+      "detail": "",
+      "disclosureText": "Le confirmaste el pedido de 24 caja de archivo por 1,872 MXN — sin fecha. Dijiste: «las 24 en 1,872».",
+      "confidence": 0.95
+    },
+    {
+      "factId": "e8fa5e90-7a2d-4eb8-90ad-07514bb0d6ed",
+      "transcriptId": "b-dia-completo-pena",
+      "messageId": "B5-06",
+      "factType": "DatePromised",
+      "reason": "no_label_for_message",
+      "detail": "",
+      "disclosureText": "Le confirmaste pasar por la firma — sin fecha.",
+      "confidence": 0.85
+    },
+    {
+      "factId": "b195a202-4d1a-4324-94fd-314cff8f8ed4",
+      "transcriptId": "b-dia-completo-quiroz",
+      "messageId": "BH-04",
+      "factType": "OrderTaken",
+      "reason": "check_failed",
+      "detail": "requestedFor should be absent, was \"2026-10-08\"",
+      "disclosureText": "Le confirmaste el pedido de equipo importado por 2,400 USD para el jueves 8 de octubre de 2026 — sin cantidad. Dijiste: «va, lo tengo el 8 de octubre».",
+      "confidence": 0.95
+    },
+    {
+      "factId": "49b4d421-af42-464c-92f7-a18bbf9e073b",
+      "transcriptId": "b-dia-completo-salinas",
+      "messageId": "B7-04",
+      "factType": "OrderTaken",
+      "reason": "check_failed",
+      "detail": "requestedFor should be absent, was \"2026-09-18\"",
+      "disclosureText": "Le confirmaste el pedido de 500 tabiques por 8,550 MXN para el viernes 18 de septiembre de 2026. Dijiste: «va. entrego el 18 de septiembre en su bodega».",
+      "confidence": 0.95
+    },
+    {
+      "factId": "3fbc7430-9509-4cc2-bfe3-8b1e6fe4442d",
+      "transcriptId": "b-dia-completo-serrano",
+      "messageId": "BG-03",
+      "factType": "OrderTaken",
+      "reason": "no_label_for_type",
+      "detail": "",
+      "disclosureText": "Le confirmaste el pedido de 15 cubetas de pintura blanca por 5,850 MXN — sin fecha. Dijiste: «las 15 cubetas en 5,850».",
+      "confidence": 0.9
+    },
+    {
+      "factId": "1c2fd62e-10a5-4611-9303-3b853d586d71",
+      "transcriptId": "b-dia-completo-tapia",
+      "messageId": "BI-07",
+      "factType": "OrderTaken",
+      "reason": "check_failed",
+      "detail": "requestedFor should be absent, was \"2026-10-12\"",
+      "disclosureText": "Le confirmaste el pedido de 120 metros de malla por 9,600 MXN para el lunes 12 de octubre de 2026. Dijiste: «perfecto, se los llevo el 12 de octubre».",
+      "confidence": 1
+    },
+    {
+      "factId": "9d767cc1-c1e3-4206-9bab-212feb59fbea",
+      "transcriptId": "b-dia-completo-vallejo",
+      "messageId": "B6-01",
+      "factType": "OrderRequested",
+      "reason": "misattributed",
+      "detail": "no label on B6-01, though this day states a OrderRequested elsewhere",
+      "disclosureText": "Te pidió 100 metros de cable calibre 12 — sin precio, sin fecha.",
+      "confidence": 0.95
+    },
+    {
+      "factId": "e5abf1b2-1003-48f2-ba65-f7e9a8b365db",
+      "transcriptId": "d-fecha-relativa",
+      "messageId": "D1-02",
+      "factType": "DatePromised",
+      "reason": "check_failed",
+      "detail": "commitment should contain \"jueves\", was \"que lo tiene disponible\"",
+      "disclosureText": "Le confirmaste que lo tiene disponible — viernes 4 de septiembre de 2026.",
+      "confidence": 0.95
+    },
+    {
+      "factId": "cb16b174-2b13-491d-af13-29ef6d1de70b",
+      "transcriptId": "q-cotizacion-directa",
+      "messageId": "Q1-06",
+      "factType": "OrderTaken",
+      "reason": "check_failed",
+      "detail": "requestedFor should be absent, was \"2026-09-04\"",
+      "disclosureText": "Le confirmaste el pedido de 40 bultos de cemento gris por 8,200 MXN para el viernes 4 de septiembre de 2026. Dijiste: «listo, se los tengo el viernes 4 de septiembre».",
+      "confidence": 1
+    },
+    {
+      "factId": "e8f9ac01-504d-457b-a90d-b74cdc9dcc9a",
+      "transcriptId": "q-pedido-fechado",
+      "messageId": "Q5-01",
+      "factType": "OrderRequested",
+      "reason": "misattributed",
+      "detail": "no label on Q5-01, though this day states a OrderRequested elsewhere",
+      "disclosureText": "Te pidió 45 rollos de alambre recocido — sin precio, sin fecha.",
+      "confidence": 1
+    },
+    {
+      "factId": "3248f082-f598-43cb-850b-5032b3abd080",
+      "transcriptId": "q-precio-revisado",
+      "messageId": "Q2-01",
+      "factType": "OrderRequested",
+      "reason": "misattributed",
+      "detail": "no label on Q2-01, though this day states a OrderRequested elsewhere",
+      "disclosureText": "Te pidió 200 varillas del 3/8 — sin precio, sin fecha.",
+      "confidence": 0.95
+    },
+    {
+      "factId": "4fc20193-1869-4f48-9426-ea8f0d4b121a",
+      "transcriptId": "q-precio-revisado",
+      "messageId": "Q2-03",
+      "factType": "QuoteGiven",
+      "reason": "misattributed",
+      "detail": "no label on Q2-03, though this day states a QuoteGiven elsewhere",
+      "disclosureText": "Le cotizaste 200 varillas del 3/8 en 24,000 MXN — sin fecha.",
+      "confidence": 0.95
+    },
+    {
+      "factId": "f2f14abe-9e4d-4931-b19d-32bf4cd8832d",
+      "transcriptId": "q-precio-unitario",
+      "messageId": "Q3-02",
+      "factType": "QuoteGiven",
+      "reason": "check_failed",
+      "detail": "quantity should be absent, was 1",
+      "disclosureText": "Le cotizaste 1 bulto de mortero en 185 MXN — sin fecha.",
+      "confidence": 0.95
+    },
+    {
+      "factId": "4e3ddcd5-77f9-4771-be2f-b47ef16de8d4",
+      "transcriptId": "x-queja-y-pregunta",
+      "messageId": "X1-05",
+      "factType": "OrderTaken",
+      "reason": "no_label_for_type",
+      "detail": "",
+      "disclosureText": "Le confirmaste el pedido de 5 bultos de 5 bultos para el jueves 10 de septiembre de 2026 — sin precio. Dijiste: «hecho, se los repongo el jueves 10 de septiembre».",
+      "confidence": 0.95
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "description": "Seed transcript for the development rig's magic loop: a counterparty ordering over WhatsApp, the rep replying, plus a second chat to prove chat-scoped reads. Numbers are reserved fictional ranges; content mirrors real rig traffic shape (ADR-0028 fixture substrate).",
+  "rows": [
+    {
+      "chatJid": "5215550001@s.whatsapp.net",
+      "messageId": "3EB0-SEED-001",
+      "senderJid": "5215550001@s.whatsapp.net",
+      "fromMe": false,
+      "occurredAt": "2026-08-27T14:03:00.000Z",
+      "content": "hola, ¿me mandas 40 cajas de agua para el jueves?"
+    },
+    {
+      "chatJid": "5215550001@s.whatsapp.net",
+      "messageId": "3EB0-SEED-002",
+      "senderJid": "5215550000@s.whatsapp.net",
+      "fromMe": true,
+      "occurredAt": "2026-08-27T14:05:30.000Z",
+      "content": "claro que sí, se las mando el jueves temprano"
+    },
+    {
+      "chatJid": "5215550001@s.whatsapp.net",
+      "messageId": "3EB0-SEED-003",
+      "senderJid": "5215550001@s.whatsapp.net",
+      "fromMe": false,
+      "occurredAt": "2026-08-27T14:06:10.000Z",
+      "content": "perfecto, ¿mismo precio que la vez pasada?"
+    },
+    {
+      "chatJid": "5215550001@s.whatsapp.net",
+      "messageId": "3EB0-SEED-004",
+      "senderJid": "5215550000@s.whatsapp.net",
+      "fromMe": true,
+      "occurredAt": "2026-08-27T14:08:45.000Z",
+      "content": "sí, mismo precio de mayoreo"
+    },
+    {
+      "chatJid": "5215550002@s.whatsapp.net",
+      "messageId": "3EB0-SEED-005",
+      "senderJid": "5215550002@s.whatsapp.net",
+      "fromMe": false,
+      "occurredAt": "2026-08-27T15:12:00.000Z",
+      "content": "buenas tardes, ¿tienen entrega en el centro?"
+    },
+    {
+      "chatJid": "5215550002@s.whatsapp.net",
+      "messageId": "3EB0-SEED-006",
+      "senderJid": "5215550000@s.whatsapp.net",
+      "fromMe": true,
+      "occurredAt": "2026-08-27T15:20:00.000Z",
+      "content": "sí, entregamos en el centro los martes y viernes"
+    }
+  ]
+}
